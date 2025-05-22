@@ -13,6 +13,9 @@ async function fetchMarkdownAndRender(filePath, targetElementId) {
         return;
     }
 
+    // Show a loading message
+    targetElement.innerHTML = '<p>Loading content...</p>';
+
     try {
         const response = await fetch(filePath);
         if (!response.ok) {
@@ -26,21 +29,55 @@ async function fetchMarkdownAndRender(filePath, targetElementId) {
     }
 }
 
+// Modal elements
+let achievementModal;
+let modalAchievementContent;
+let modalCloseButton;
+
+/**
+ * Opens the achievement modal and loads the specified Markdown file into it.
+ * @param {string} filePath Path to the Markdown file.
+ */
+function openAchievementModal(filePath) {
+    if (!achievementModal || !modalAchievementContent) {
+        console.error("Modal elements not initialized.");
+        return;
+    }
+    // Clear previous content
+    modalAchievementContent.innerHTML = '';
+    fetchMarkdownAndRender(filePath, 'modalAchievementContent');
+
+    achievementModal.style.display = 'block';
+    setTimeout(() => {
+        achievementModal.classList.add('modal-active');
+    }, 10); // Timeout to allow display:block to apply before transition
+}
+
+/**
+ * Closes the achievement modal.
+ */
+function closeAchievementModal() {
+    if (!achievementModal) {
+        console.error("Modal element not initialized.");
+        return;
+    }
+    achievementModal.classList.remove('modal-active');
+    setTimeout(() => {
+        achievementModal.style.display = 'none';
+    }, 300); // Match CSS transition duration (0.3s)
+}
+
+
 /**
  * Fetches achievements from achievements.json, displays them in a list,
- * and sets up event listeners to load Markdown content when an achievement is clicked.
+ * and sets up event listeners to load Markdown content into a modal.
  */
 async function loadAndDisplayAchievements() {
     const achievementsListElement = document.getElementById('achievements-list');
-    const achievementContentElement = document.getElementById('achievement-content');
 
     if (!achievementsListElement) {
         console.error("Error: Achievements list element ('achievements-list') not found.");
         return;
-    }
-    if (!achievementContentElement) {
-        console.error("Error: Achievement content element ('achievement-content') not found.");
-        // We can still display the list, but clicking won't show content.
     }
 
     try {
@@ -50,17 +87,11 @@ async function loadAndDisplayAchievements() {
         }
         const achievements = await response.json();
 
-        // Clear any existing list content
         achievementsListElement.innerHTML = '';
-        // Clear previous achievement content
-        if (achievementContentElement) {
-            achievementContentElement.innerHTML = '<p>Select an achievement to view its details.</p>';
-        }
-
 
         achievements.forEach(achievement => {
             const achievementItem = document.createElement('div');
-            achievementItem.classList.add('achievement-item'); // For styling
+            achievementItem.classList.add('achievement-item');
 
             const titleElement = document.createElement('h3');
             titleElement.textContent = achievement.title;
@@ -77,22 +108,27 @@ async function loadAndDisplayAchievements() {
             achievementItem.appendChild(dateElement);
             achievementItem.appendChild(summaryElement);
 
-            // Make the whole item clickable
             achievementItem.setAttribute('data-md-file', achievement.file);
             achievementItem.addEventListener('click', () => {
-                if (achievement.file && achievementContentElement) {
-                    fetchMarkdownAndRender(achievement.file, 'achievement-content');
-                } else if (!achievementContentElement) {
-                    console.error("Cannot render achievement content: 'achievement-content' element not found.");
+                if (achievement.file) {
+                    openAchievementModal(achievement.file);
                 } else {
                     console.warn("No markdown file specified for this achievement:", achievement.title);
-                    if (achievementContentElement) {
-                        achievementContentElement.innerHTML = "<p>No details available for this achievement.</p>";
-                    }
+                    modalAchievementContent.innerHTML = "<p>No details available for this achievement.</p>";
+                    achievementModal.style.display = 'block';
+                    setTimeout(() => {
+                        achievementModal.classList.add('modal-active');
+                    }, 10);
                 }
             });
 
             achievementsListElement.appendChild(achievementItem);
+        });
+
+        // Staggered animation for achievement items (should still work as they appear)
+        const items = document.querySelectorAll('#achievements-list .achievement-item');
+        items.forEach((item, index) => {
+            item.style.animationDelay = `${index * 0.1}s`;
         });
 
     } catch (error) {
@@ -102,8 +138,52 @@ async function loadAndDisplayAchievements() {
 }
 
 
-// Load resume and achievements when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
-    fetchMarkdownAndRender('md/resume.md', 'resume-section');
-    loadAndDisplayAchievements();
+    // Initialize modal elements
+    achievementModal = document.getElementById('achievementModal');
+    modalAchievementContent = document.getElementById('modalAchievementContent');
+    modalCloseButton = document.querySelector('.modal-close-button');
+
+    // Event listeners for closing modal
+    if (modalCloseButton) {
+        modalCloseButton.addEventListener('click', closeAchievementModal);
+    }
+    if (achievementModal) {
+        achievementModal.addEventListener('click', (event) => {
+            if (event.target === achievementModal) { // Clicked on overlay
+                closeAchievementModal();
+            }
+        });
+    }
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && achievementModal && achievementModal.classList.contains('modal-active')) {
+            closeAchievementModal();
+        }
+    });
+
+    // Load initial content
+    fetchMarkdownAndRender('md/resume.md', 'resume-section'); // Resume is usually visible on load or part of first section
+    loadAndDisplayAchievements(); // Achievements might be in a section that needs to scroll into view
+
+    // Intersection Observer for scroll-triggered animations on sections
+    const sectionsToAnimate = document.querySelectorAll('main > section');
+
+    const observerOptions = {
+      root: null, // observes intersections relative to the viewport
+      threshold: 0.1, // trigger when 10% of the section is visible
+      // rootMargin: "0px 0px -50px 0px" // example: trigger a bit before it's fully in view
+    };
+
+    const sectionObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target); // Animate only once
+        }
+      });
+    }, observerOptions);
+
+    sectionsToAnimate.forEach(section => {
+      sectionObserver.observe(section);
+    });
 });

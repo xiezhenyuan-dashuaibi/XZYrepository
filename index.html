@@ -29,14 +29,20 @@
             <div id="achievements-list">
                 <!-- Achievements list will be populated here by JavaScript -->
             </div>
-            <div id="achievement-content">
-                <!-- Selected achievement's Markdown content will be rendered here -->
-            </div>
+            <!-- The div below (#achievement-content) is no longer used as content is shown in a modal -->
         </section>
     </main>
     <footer>
         <p>&copy; 2023 My Name</p>
     </footer>
+
+    <div id="achievementModal" class="modal">
+      <div class="modal-content">
+        <span class="modal-close-button">&times;</span>
+        <div id="modalAchievementContent"></div>
+      </div>
+    </div>
+
     <script src="js/main.js"></script>
 </body>
 </html>
