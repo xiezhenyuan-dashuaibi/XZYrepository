@@ -1,0 +1,14 @@
+[
+  {
+    "title": "My First Project",
+    "file": "md/project-alpha.md",
+    "date": "2023-01-15",
+    "summary": "A brief description of Project Alpha."
+  },
+  {
+    "title": "Awesome Research Paper",
+    "file": "md/research-paper.md",
+    "date": "2023-05-20",
+    "summary": "Summary of the groundbreaking research paper."
+  }
+]
