@@ -1,0 +1,24 @@
+body {
+    margin: 0;
+    overflow: hidden; /* Hide scrollbars if stars go out of bounds */
+    background-color: #000010; /* A very dark blue, almost black */
+    color: #fff; /* Default text color to white for contrast */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* A modern, clean font */
+}
+
+#starry-sky-container {
+    width: 100vw;
+    height: 100vh;
+    position: relative; /* For positioning stars if they are children of this */
+    /* If using canvas, it will be placed here */
+}
+
+/* Placeholder for potential text content, if any, in the future */
+.content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 1; /* Ensure content is above the background */
+}
